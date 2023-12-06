@@ -9,16 +9,9 @@ const Github = () => {
 	const [users, setUsers] = useState<SearchUserType[]>([]);
 	const [tempSearch, setTempsearch] = useState('chel12'); //при вводе будем менять стейте
 	const [searchTerm, setSearchTerm] = useState('chel12'); // при нажатие на кнопку будем менять стейт
+	const [userDetails, setUserDetails] = useState<null | UserType>();
 
-	const fetchData = (term: string) => {
-		axios
-			.get<SearchResult>(`https://api.github.com/search/users?q=${term}`)
-			.then((res) => {
-				//@ts-ignore
-				setUsers(res.data.items);
-			});
-	};
-
+	//1 синхрон тайтла
 	useEffect(() => {
 		if (selectedUser) {
 			document.title = selectedUser.login;
@@ -26,10 +19,33 @@ const Github = () => {
 	}, [selectedUser]); //зависимость при изменение которой useEffect будет срабатывать
 
 	//для апи
+	//2 синхрон загрузка пользователей.
 	useEffect(() => {
-		fetchData(tempSearch);
+		axios
+			.get<SearchResult>(
+				`https://api.github.com/search/users?q=${searchTerm}`
+			)
+			.then((res) => {
+				//@ts-ignore
+				setUsers(res.data.items);
+			});
 	}, [searchTerm]); //если зависит от tempSearch - то сразу рендер, иначе  searchTerm по кнопке рендерит
 	//контроль инпута: 1) value; 2) (e) => {setTempsearch(e.currentTarget.value)}
+
+	//3 синхрон
+	useEffect(() => {
+		if (!!selectedUser) {
+			axios
+				.get<UserType>(
+					`https://api.github.com/users/${selectedUser.login}`
+				)
+				.then((res) => {
+					//@ts-ignore
+					setUserDetails(res.data);
+				});
+		}
+	}, [selectedUser]);
+
 	return (
 		<div className={s.container}>
 			<div>
@@ -63,7 +79,13 @@ const Github = () => {
 			</div>
 			<div>
 				<h2>Username</h2>
-				<div>Details</div>
+				{userDetails && (
+					<div>
+						<img src={userDetails.avatar_url} alt="" />
+						<br />
+						{userDetails.login}, followers:{userDetails.followers}
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -77,4 +99,10 @@ type SearchUserType = {
 };
 type SearchResult = {
 	items: SearchUserType;
+};
+type UserType = {
+	login: string;
+	id: number;
+	avatar_url: string;
+	followers: number;
 };
