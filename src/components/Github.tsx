@@ -7,7 +7,8 @@ const Github = () => {
 		null
 	);
 	const [users, setUsers] = useState<SearchUserType[]>([]);
-	const [tempSearch, setTempsearch] = useState('chel12');
+	const [tempSearch, setTempsearch] = useState('chel12'); //при вводе будем менять стейте
+	const [searchTerm, setSearchTerm] = useState('chel12'); // при нажатие на кнопку будем менять стейт
 
 	const fetchData = (term: string) => {
 		axios
@@ -27,7 +28,7 @@ const Github = () => {
 	//для апи
 	useEffect(() => {
 		fetchData(tempSearch);
-	}, [tempSearch]);
+	}, [searchTerm]); //если зависит от tempSearch - то сразу рендер, иначе  searchTerm по кнопке рендерит
 	//контроль инпута: 1) value; 2) (e) => {setTempsearch(e.currentTarget.value)}
 	return (
 		<div className={s.container}>
@@ -40,7 +41,12 @@ const Github = () => {
 							setTempsearch(e.currentTarget.value);
 						}}
 					/>{' '}
-					<button>find</button>
+					<button
+						onClick={() => {
+							setSearchTerm(tempSearch);
+						}}>
+						find
+					</button>
 				</div>
 				<ul>
 					{users.map((u) => (
