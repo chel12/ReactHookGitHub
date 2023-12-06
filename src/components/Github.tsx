@@ -1,14 +1,43 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import s from './Github.module.css';
+let initialSearchState = 'chel12';
 
-const Github = () => {
+type SearchPropsType = {
+	value: string;
+	onSubmit: (fixedValue: string) => void;
+};
+export const Search = (props: SearchPropsType) => {
+	const [tempSearch, setTempsearch] = useState(''); //при вводе будем менять стейте
+	useEffect(() => {
+		setTempsearch(props.value);
+	}, [props.value]);
+	return (
+		<div>
+			<input
+				placeholder="search"
+				value={tempSearch}
+				onChange={(e) => {
+					setTempsearch(e.currentTarget.value);
+				}}
+			/>{' '}
+			<button
+				onClick={() => {
+					props.onSubmit(tempSearch); //передаем в коллбек функцию
+				}}>
+				find
+			</button>
+		</div>
+	);
+};
+
+export const Github = () => {
 	const [selectedUser, setSelectedUser] = useState<SearchUserType | null>(
 		null
 	);
 	const [users, setUsers] = useState<SearchUserType[]>([]);
-	const [tempSearch, setTempsearch] = useState('chel12'); //при вводе будем менять стейте
-	const [searchTerm, setSearchTerm] = useState('chel12'); // при нажатие на кнопку будем менять стейт
+	// const [tempSearch, setTempsearch] = useState('chel12'); //при вводе будем менять стейте
+	const [searchTerm, setSearchTerm] = useState(initialSearchState); // при нажатие на кнопку будем менять стейт
 	const [userDetails, setUserDetails] = useState<null | UserType>();
 
 	//1 синхрон тайтла
@@ -47,23 +76,21 @@ const Github = () => {
 	}, [selectedUser]);
 
 	return (
+		//передаем пропсы из комоненты
 		<div className={s.container}>
+			<Search
+				value={searchTerm}
+				onSubmit={(value: string) => {
+					setSearchTerm(value);
+				}}
+			/>
+			<button
+				onClick={() => {
+					setSearchTerm(initialSearchState);
+				}}>
+				Reset
+			</button>
 			<div>
-				<div>
-					<input
-						placeholder="search"
-						value={tempSearch}
-						onChange={(e) => {
-							setTempsearch(e.currentTarget.value);
-						}}
-					/>{' '}
-					<button
-						onClick={() => {
-							setSearchTerm(tempSearch);
-						}}>
-						find
-					</button>
-				</div>
 				<ul>
 					{users.map((u) => (
 						<li
