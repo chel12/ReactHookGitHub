@@ -2,11 +2,34 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import s from './Github.module.css';
 let initialSearchState = 'chel12';
+let number = 10;
+export const Timer = (props: TimerProps) => {
+	const [seconds, setSeconds] = useState(props.seconds); //при первой отрисовки фиксирует 60
 
-type SearchPropsType = {
-	value: string;
-	onSubmit: (fixedValue: string) => void;
+	useEffect(() => {
+		setSeconds(props.seconds);
+	}, [props.seconds]);
+	useEffect(() => {
+		//далее фиксируется useEffect, но не запускается
+		const intervalId = setInterval(() => {
+			//рендер и обращение к секундам, у самой функции секунд нет, и происходити замыкание(наверх вылезает и ищет у родителя)
+			//получается она вылазеет к 60 берет и рисует 59, и далее выполняет все тоже самое по кругу, соотвественно не меняется значение и реакт компонента не делает рендер
+			setSeconds((prev) => prev - 1); //делает от предыдущего значения а не вручную
+		}, 1000);
+		return () => {
+			clearInterval(intervalId); // средство зачистки для интервала
+		};
+		//cleanup function для очистки
+	}, []); // почему не перебивает код из тела? потому что вызывается функция 1 раз, у неё нет зависимостей
+	//затем нужно синхрон таймера сделать при выборе нового юзера
+	//для других случаев аналогично, дестрой элементов, removeEventod  и закрытие вебсокетов
+	useEffect(() => {
+		//при изменение seconds дадим актульные секунды родителю через колбек
+		props.onChange(seconds);
+	}, [seconds]);
+	return <div>{seconds}</div>;
 };
+
 export const Search = (props: SearchPropsType) => {
 	const [tempSearch, setTempsearch] = useState(''); //при вводе будем менять стейте
 	useEffect(() => {
@@ -30,7 +53,6 @@ export const Search = (props: SearchPropsType) => {
 		</div>
 	);
 };
-
 export const UserList = (props: UsersListPropsType) => {
 	const [users, setUsers] = useState<SearchUserType[]>([]);
 	useEffect(() => {
@@ -59,9 +81,9 @@ export const UserList = (props: UsersListPropsType) => {
 		</ul>
 	);
 };
-
 export const UserDetails = (props: UserDetailsPropsType) => {
 	const [userDetails, setUserDetails] = useState<null | UserType>(null);
+	const [seconds, setSeconds] = useState(number);
 	useEffect(() => {
 		if (!!props.user) {
 			axios
@@ -70,15 +92,23 @@ export const UserDetails = (props: UserDetailsPropsType) => {
 				)
 				.then((res) => {
 					//@ts-ignore
+					setSeconds(number); //порядок важен иначе юзер раньше времени будет грузиться и таймер не обнулится
 					setUserDetails(res.data);
 				});
 		}
 	}, [props.user]);
 
+	useEffect(() => {
+		if (seconds < 1) {
+			setUserDetails(null);
+		}
+	}, [seconds]);
+
 	return (
 		<div>
 			{userDetails && (
 				<div>
+					<Timer seconds={seconds} onChange={setSeconds} />
 					<h2>{userDetails.login}</h2>
 					<img src={userDetails.avatar_url} alt="" />
 					<br />
@@ -88,7 +118,6 @@ export const UserDetails = (props: UserDetailsPropsType) => {
 		</div>
 	);
 };
-
 export const Github = () => {
 	const [selectedUser, setSelectedUser] = useState<SearchUserType | null>(
 		null
@@ -163,6 +192,11 @@ export const Github = () => {
 
 export default Github;
 
+type SearchPropsType = {
+	value: string;
+	onSubmit: (fixedValue: string) => void;
+};
+
 type SearchUserType = {
 	login: string;
 	id: number;
@@ -185,4 +219,9 @@ type UsersListPropsType = {
 
 type UserDetailsPropsType = {
 	user: SearchUserType | null;
+};
+
+type TimerProps = {
+	seconds: number;
+	onChange: (actualSeconds: number) => void;
 };
