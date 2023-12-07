@@ -45,20 +45,47 @@ export const UserList = (props: UsersListPropsType) => {
 			});
 	}, [props.term]);
 	return (
-		
-			<ul>
-				{users.map((u) => (
-					<li
-						key={u.id}
-						className={props.selectedUser === u ? s.selected : ''} //пропсы из родителя
-						onClick={() => {
-							props.onUserSelect(u); // закинуть в стейт текущего на которого кликнули. А теперь колбеком к родителю
-						}}>
-						{u.login}
-					</li>
-				))}
-			</ul>
-		
+		<ul>
+			{users.map((u) => (
+				<li
+					key={u.id}
+					className={props.selectedUser === u ? s.selected : ''} //пропсы из родителя
+					onClick={() => {
+						props.onUserSelect(u); // закинуть в стейт текущего на которого кликнули. А теперь колбеком к родителю
+					}}>
+					{u.login}
+				</li>
+			))}
+		</ul>
+	);
+};
+
+export const UserDetails = (props: UserDetailsPropsType) => {
+	const [userDetails, setUserDetails] = useState<null | UserType>(null);
+	useEffect(() => {
+		if (!!props.user) {
+			axios
+				.get<UserType>(
+					`https://api.github.com/users/${props.user.login}`
+				)
+				.then((res) => {
+					//@ts-ignore
+					setUserDetails(res.data);
+				});
+		}
+	}, [props.user]);
+
+	return (
+		<div>
+			{userDetails && (
+				<div>
+					<h2>{userDetails.login}</h2>
+					<img src={userDetails.avatar_url} alt="" />
+					<br />
+					{userDetails.login}, followers:{userDetails.followers}
+				</div>
+			)}
+		</div>
 	);
 };
 
@@ -69,7 +96,6 @@ export const Github = () => {
 	// const [users, setUsers] = useState<SearchUserType[]>([]);
 	// const [tempSearch, setTempsearch] = useState('chel12'); //при вводе будем менять стейте
 	const [searchTerm, setSearchTerm] = useState(initialSearchState); // при нажатие на кнопку будем менять стейт
-	const [userDetails, setUserDetails] = useState<null | UserType>();
 
 	//1 синхрон тайтла
 	useEffect(() => {
@@ -93,18 +119,18 @@ export const Github = () => {
 	//контроль инпута: 1) value; 2) (e) => {setTempsearch(e.currentTarget.value)}
 
 	//3 синхрон
-	useEffect(() => {
-		if (!!selectedUser) {
-			axios
-				.get<UserType>(
-					`https://api.github.com/users/${selectedUser.login}`
-				)
-				.then((res) => {
-					//@ts-ignore
-					setUserDetails(res.data);
-				});
-		}
-	}, [selectedUser]);
+	// useEffect(() => {
+	// 	if (!!selectedUser) {
+	// 		axios
+	// 			.get<UserType>(
+	// 				`https://api.github.com/users/${selectedUser.login}`
+	// 			)
+	// 			.then((res) => {
+	// 				//@ts-ignore
+	// 				setUserDetails(res.data);
+	// 			});
+	// 	}
+	// }, [selectedUser]);
 
 	return (
 		//передаем пропсы из комоненты
@@ -115,7 +141,7 @@ export const Github = () => {
 					setSearchTerm(value);
 				}}
 			/>
-			
+
 			<div>
 				<button
 					onClick={() => {
@@ -125,21 +151,12 @@ export const Github = () => {
 				</button>
 			</div>
 			<UserList
-					term={searchTerm}
-					onUserSelect={setSelectedUser} //колбек и сетаем юзера (сеттер и геттер)
-					selectedUser={selectedUser}
-				/>
-			
-			<div>
-				<h2>Username</h2>
-				{userDetails && (
-					<div>
-						<img src={userDetails.avatar_url} alt="" />
-						<br />
-						{userDetails.login}, followers:{userDetails.followers}
-					</div>
-				)}
-			</div>
+				term={searchTerm}
+				onUserSelect={setSelectedUser} //колбек и сетаем юзера (сеттер и геттер)
+				selectedUser={selectedUser}
+			/>
+
+			<UserDetails user={selectedUser} />
 		</div>
 	);
 };
@@ -164,4 +181,8 @@ type UsersListPropsType = {
 	term: string; //для поиска
 	selectedUser: SearchUserType | null; //для выбранного
 	onUserSelect: (user: SearchUserType) => void; //для колбека, чтобы передать в синхрониз
+};
+
+type UserDetailsPropsType = {
+	user: SearchUserType | null;
 };
