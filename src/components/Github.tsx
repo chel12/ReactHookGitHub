@@ -31,11 +31,42 @@ export const Search = (props: SearchPropsType) => {
 	);
 };
 
+export const UserList = (props: UsersListPropsType) => {
+	const [users, setUsers] = useState<SearchUserType[]>([]);
+	useEffect(() => {
+		//но он зависит от searchTerm, который хранится у родителя
+		axios
+			.get<SearchResult>(
+				`https://api.github.com/search/users?q=${props.term}`
+			)
+			.then((res) => {
+				//@ts-ignore
+				setUsers(res.data.items);
+			});
+	}, [props.term]);
+	return (
+		
+			<ul>
+				{users.map((u) => (
+					<li
+						key={u.id}
+						className={props.selectedUser === u ? s.selected : ''} //пропсы из родителя
+						onClick={() => {
+							props.onUserSelect(u); // закинуть в стейт текущего на которого кликнули. А теперь колбеком к родителю
+						}}>
+						{u.login}
+					</li>
+				))}
+			</ul>
+		
+	);
+};
+
 export const Github = () => {
 	const [selectedUser, setSelectedUser] = useState<SearchUserType | null>(
 		null
 	);
-	const [users, setUsers] = useState<SearchUserType[]>([]);
+	// const [users, setUsers] = useState<SearchUserType[]>([]);
 	// const [tempSearch, setTempsearch] = useState('chel12'); //при вводе будем менять стейте
 	const [searchTerm, setSearchTerm] = useState(initialSearchState); // при нажатие на кнопку будем менять стейт
 	const [userDetails, setUserDetails] = useState<null | UserType>();
@@ -49,16 +80,16 @@ export const Github = () => {
 
 	//для апи
 	//2 синхрон загрузка пользователей.
-	useEffect(() => {
-		axios
-			.get<SearchResult>(
-				`https://api.github.com/search/users?q=${searchTerm}`
-			)
-			.then((res) => {
-				//@ts-ignore
-				setUsers(res.data.items);
-			});
-	}, [searchTerm]); //если зависит от tempSearch - то сразу рендер, иначе  searchTerm по кнопке рендерит
+	// useEffect(() => {
+	// 	axios
+	// 		.get<SearchResult>(
+	// 			`https://api.github.com/search/users?q=${searchTerm}`
+	// 		)
+	// 		.then((res) => {
+	// 			//@ts-ignore
+	// 			setUsers(res.data.items);
+	// 		});
+	// }, [searchTerm]); //если зависит от tempSearch - то сразу рендер, иначе  searchTerm по кнопке рендерит
 	//контроль инпута: 1) value; 2) (e) => {setTempsearch(e.currentTarget.value)}
 
 	//3 синхрон
@@ -84,26 +115,21 @@ export const Github = () => {
 					setSearchTerm(value);
 				}}
 			/>
-			<button
-				onClick={() => {
-					setSearchTerm(initialSearchState);
-				}}>
-				Reset
-			</button>
+			
 			<div>
-				<ul>
-					{users.map((u) => (
-						<li
-							key={u.id}
-							className={selectedUser === u ? s.selected : ''}
-							onClick={() => {
-								setSelectedUser(u); // закинуть в стейт текущего на которого кликнули
-							}}>
-							{u.login}
-						</li>
-					))}
-				</ul>
+				<button
+					onClick={() => {
+						setSearchTerm(initialSearchState);
+					}}>
+					Reset
+				</button>
 			</div>
+			<UserList
+					term={searchTerm}
+					onUserSelect={setSelectedUser} //колбек и сетаем юзера (сеттер и геттер)
+					selectedUser={selectedUser}
+				/>
+			
 			<div>
 				<h2>Username</h2>
 				{userDetails && (
@@ -132,4 +158,10 @@ type UserType = {
 	id: number;
 	avatar_url: string;
 	followers: number;
+};
+
+type UsersListPropsType = {
+	term: string; //для поиска
+	selectedUser: SearchUserType | null; //для выбранного
+	onUserSelect: (user: SearchUserType) => void; //для колбека, чтобы передать в синхрониз
 };
