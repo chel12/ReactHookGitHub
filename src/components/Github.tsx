@@ -20,7 +20,7 @@ export const Timer = (props: TimerProps) => {
 			clearInterval(intervalId); // средство зачистки для интервала
 		};
 		//cleanup function для очистки
-	}, []); // почему не перебивает код из тела? потому что вызывается функция 1 раз, у неё нет зависимостей
+	}, [props.timerKey]); // почему не перебивает код из тела? потому что вызывается функция 1 раз, у неё нет зависимостей
 	//затем нужно синхрон таймера сделать при выборе нового юзера
 	//для других случаев аналогично, дестрой элементов, removeEventod  и закрытие вебсокетов
 	useEffect(() => {
@@ -108,7 +108,11 @@ export const UserDetails = (props: UserDetailsPropsType) => {
 		<div>
 			{userDetails && (
 				<div>
-					<Timer seconds={seconds} onChange={setSeconds} />
+					<Timer
+						seconds={seconds}
+						onChange={setSeconds}
+						timerKey={userDetails.id.toString()}
+					/>
 					<h2>{userDetails.login}</h2>
 					<img src={userDetails.avatar_url} alt="" />
 					<br />
@@ -224,4 +228,5 @@ type UserDetailsPropsType = {
 type TimerProps = {
 	seconds: number;
 	onChange: (actualSeconds: number) => void;
+	timerKey: string;
 };
